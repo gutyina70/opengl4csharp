@@ -121,14 +121,14 @@ namespace OpenGL.Platform
         #endregion
 
         #region Variables
-        private static List<char> keys;                                // a list of keys that are down
-        private static List<char> keysRaw;                             // a list of raw keys that are down
+        public static List<char> keys;                                 // a list of keys that are down
+        public static List<char> keysRaw;                              // a list of raw keys that are down
         private static Stack<Event[]> subqueue;                        // a stack of events, the topmost being the current key bindings
         private static Stack<Event[]> subqueueRaw;                     // a stack of events, the topmost being the current raw key bindings
         private static Click mousePosition, prevMousePosition;         // the current and previous mouse position and button
         private static Event mouseLeft, mouseRight, mouseMiddle;       // the events to be called on a mouse click
         private static Event mouseMove;                                // the event to call on a mouse move event
-        private static Dictionary<SDL.SDL_Keycode, char> sdlKeyMap;    // SDL Keyscodes mapped to a char
+        public static Dictionary<SDL.SDL_Keycode, char> sdlKeyMap;    // SDL Keyscodes mapped to a char
 
         public static bool RightMouse { get; set; }
         public static bool LeftMouse { get; set; }
@@ -317,6 +317,24 @@ namespace OpenGL.Platform
             if(KeyBindingsRaw[keyRaw] != null && KeyBindingsRaw[keyRaw].Call != null)
                 KeyBindingsRaw[keyRaw].Call(keyRaw, false);
             keysRaw.Remove(keyRaw);
+        }
+
+        /// <summary>
+        /// Determines whether a key is pressed or not.
+        /// </summary>
+        /// <param name="key"></param>
+        public static bool IsKeyDown(char key)
+        {
+            return keys.Contains(key);
+        }
+
+        /// <summary>
+        /// Determines whether a raw key is pressed or not.
+        /// </summary>
+        /// <param name="key"></param>
+        public static bool IsKeyDownRaw(SDL.SDL_Keycode key)
+        {
+            return keysRaw.Contains(sdlKeyMap[key]);
         }
 
         /// <summary>
