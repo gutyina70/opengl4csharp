@@ -19,10 +19,19 @@ namespace OpenGL.Platform
         /// </summary>
         public static int Height { get; private set; }
 
+        private static bool fullscreen = false;
         /// <summary>
         /// Gets the current fullscreen state of the SDL window.
         /// </summary>
-        public static bool Fullscreen { get; private set; }
+        public static bool Fullscreen
+        {
+            get { return fullscreen; }
+            set
+            {
+                fullscreen = value;
+                SDL.SDL_SetWindowFullscreen(window, Convert.ToUInt32(value));
+            }
+        }
 
         /// <summary>
         /// Gets the current vertical sync state of the SDL window.
@@ -47,6 +56,18 @@ namespace OpenGL.Platform
             {
                 relativeMouseMode = value;
                 SDL.SDL_SetRelativeMouseMode(value ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
+            }
+        }
+
+        public static bool Maximized
+        {
+            get
+            {
+                return Convert.ToBoolean(SDL.SDL_GetWindowFlags(window) >> 7 & 1);
+            }
+            set
+            {
+                SDL.SDL_MaximizeWindow(window);
             }
         }
 
