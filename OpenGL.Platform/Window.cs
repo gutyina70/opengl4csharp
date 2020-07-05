@@ -38,6 +38,18 @@ namespace OpenGL.Platform
         public static bool Open = false;
         #endregion
 
+        private static bool relativeMouseMode = false;
+
+        public static bool RelativeMouseMode
+        {
+            get { return relativeMouseMode; }
+            set
+            {
+                relativeMouseMode = value;
+                SDL.SDL_SetRelativeMouseMode(value ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
+            }
+        }
+
         #region Create SDL Window and OpenGL Context
         private static IntPtr window, glContext;
         public static IntPtr WindowID { get { return window; } }
@@ -208,7 +220,14 @@ namespace OpenGL.Platform
                         OnMouse(sdlEvent.button.button, sdlEvent.button.state, sdlEvent.button.x, sdlEvent.button.y);
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEMOTION:
-                        OnMovePassive(sdlEvent.motion.x, sdlEvent.motion.y);
+                        if(relativeMouseMode)
+                        {
+                            OnMotionPassive(sdlEvent.motion.xrel, sdlEvent.motion.yrel);
+                        }
+                        else
+                        {
+                            OnMovePassive(sdlEvent.motion.x, sdlEvent.motion.y);
+                        }
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEWHEEL:
                         OnMouseWheel?.Invoke(sdlEvent.wheel.which, sdlEvent.wheel.y, 0, 0);
@@ -273,9 +292,11 @@ namespace OpenGL.Platform
 
         public delegate bool OnMouseCallback(int button, int state, int x, int y);
         public delegate bool OnMouseMoveCallback(int x, int y);
+        public delegate bool OnMouseMotionCallback(int dx, int dy);
 
         public static List<OnMouseCallback> OnMouseCallbacks = new List<OnMouseCallback>();
         public static List<OnMouseMoveCallback> OnMouseMoveCallbacks = new List<OnMouseMoveCallback>();
+        public static List<OnMouseMotionCallback> OnMouseMotionCallbacks = new List<OnMouseMotionCallback>();
 
         public static bool LockLMouse { get; set; }
 
@@ -380,6 +401,21 @@ namespace OpenGL.Platform
                     Input.MouseMove.Move(Input.MousePosition.X, Input.MousePosition.Y, x, y);
 
                 Input.MousePosition = new Click(x, y, Input.MousePosition.Button, Input.MousePosition.State);
+            }
+        }
+
+        private static void OnMotionPassive(int dx, int dy)
+        {
+            // everything below should eventually move into Input.cs
+            bool handled = false;
+
+            for(int i = 0; i < OnMouseMotionCallbacks.Count && !handled; i++)
+                handled = OnMouseMotionCallbacks[i](dx, dy);
+
+            if(!handled)
+            {
+                if(Input.MouseMotion != null && Input.MouseMotion.Motion != null)
+                    Input.MouseMotion.Motion(dx, dy);
             }
         }
         #endregion

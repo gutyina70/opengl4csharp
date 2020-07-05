@@ -33,6 +33,11 @@ namespace OpenGL.Platform
         /// <param name="y">New y position.</param>
         public delegate void MoveEvent(int lx, int ly, int x, int y);
 
+        /// <summary>The mouse motion event delegate.</summary>
+        /// <param name="x">Delta x position.</param>
+        /// <param name="y">Delta y position.</param>
+        public delegate void MotionEvent(int dx, int dy);
+
         /// <summary>A keyEvent delegate which can be called by a keyDown or keyUp event.</summary>
         public KeyEvent Call { get; private set; }
 
@@ -41,6 +46,9 @@ namespace OpenGL.Platform
 
         /// <summary>A moveEvent delegate which can be called by a mouseMove event.</summary>
         public MoveEvent Move { get; private set; }
+
+        /// <summary>A motionEvent delegate which can be called by a mouseMove event when relative mouse mode is on.</summary>
+        public MotionEvent Motion { get; private set; }
 
         /// <summary>A repeatEvent delegate which can be called by UpdateKeys(float Time).</summary>
         public RepeatEvent Repeat { get; private set; }
@@ -85,6 +93,13 @@ namespace OpenGL.Platform
             this.Move = Event;
         }
 
+        /// <summary>Standard constructor for a mouse motion event.</summary>
+        /// <param name="Event">The Event to call on a mouse motion event.</param>
+        public Event(MotionEvent Event)
+        {
+            this.Motion = Event;
+        }
+
         /// <summary>Standard constructor for a mouse mouse event.</summary>
         /// <param name="Event">The Event to call every frame update.</param>
         public Event(RepeatEvent Event)
@@ -127,8 +142,8 @@ namespace OpenGL.Platform
         private static Stack<Event[]> subqueueRaw;                     // a stack of events, the topmost being the current raw key bindings
         private static Click mousePosition, prevMousePosition;         // the current and previous mouse position and button
         private static Event mouseLeft, mouseRight, mouseMiddle;       // the events to be called on a mouse click
-        private static Event mouseMove;                                // the event to call on a mouse move event
-        public static Dictionary<SDL.SDL_Keycode, char> sdlKeyMap;    // SDL Keyscodes mapped to a char
+        private static Event mouseMove, mouseMotion;                   // the event to call on a mouse move event
+        public static Dictionary<SDL.SDL_Keycode, char> sdlKeyMap;     // SDL Keyscodes mapped to a char
 
         public static bool RightMouse { get; set; }
         public static bool LeftMouse { get; set; }
@@ -203,6 +218,15 @@ namespace OpenGL.Platform
         {
             get { return mouseMove; }
             set { mouseMove = value; }
+        }
+
+        /// <summary>
+        /// An event that will be called on a mouse motion.
+        /// </summary>
+        public static Event MouseMotion
+        {
+            get { return mouseMotion; }
+            set { mouseMotion = value; }
         }
         #endregion
 
