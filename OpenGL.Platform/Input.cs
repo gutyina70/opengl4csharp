@@ -93,19 +93,19 @@ namespace OpenGL.Platform
         public static event Action<int, int> MouseMove;
         public static event Action<int, int> MouseMotion;
         public static event Action<int> MouseWheel;
-        public static event Action<Dictionary<MouseButton, bool>, int, int> MouseRepeat;
+        public static event Action<StateDictionary<MouseButton>, int, int> MouseRepeat;
 
         internal static void MouseDownInvoke(SDL.SDL_Event e)
         {
             MouseButton button = (MouseButton)e.button.button;
-            MouseState.Buttons[button] = true;
+            InputState.MouseButtons[button] = true;
             MouseDown?.Invoke(button, e.button.x, e.button.y);
         }
 
         internal static void MouseUpInvoke(SDL.SDL_Event e)
         {
             MouseButton button = (MouseButton)e.button.button;
-            MouseState.Buttons[button] = false;
+            InputState.MouseButtons[button] = false;
             MouseUp?.Invoke(button, e.button.x, e.button.y);
         }
 
@@ -113,8 +113,8 @@ namespace OpenGL.Platform
         {
             int x = e.motion.x;
             int y = e.motion.y;
-            MouseState.X = x;
-            MouseState.Y = y;
+            InputState.MouseX = x;
+            InputState.MouseY = y;
             MouseMove?.Invoke(x, y);
         }
 
@@ -122,21 +122,21 @@ namespace OpenGL.Platform
         {
             int x = e.motion.xrel;
             int y = e.motion.yrel;
-            MouseState.X += x;
-            MouseState.Y += y;
+            InputState.MouseX += x;
+            InputState.MouseY += y;
             MouseMotion?.Invoke(x, y);
         }
 
         internal static void MouseWheelInvoke(SDL.SDL_Event e)
         {
             int wheel = e.wheel.y;
-            MouseState.Wheel += wheel;
+            InputState.MouseWheel += wheel;
             MouseWheel?.Invoke(wheel);
         }
 
         internal static void MouseRepeatInvoke()
         {
-            MouseRepeat?.Invoke(MouseState.Buttons, MouseState.X, MouseState.Y);
+            MouseRepeat?.Invoke(InputState.MouseButtons, InputState.MouseX, InputState.MouseY);
         }
 
         //internal static void MouseRepeatInvoke(SDL.SDL_Event e)
