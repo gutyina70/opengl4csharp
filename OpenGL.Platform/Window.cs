@@ -225,10 +225,10 @@ namespace OpenGL.Platform
                 switch (sdlEvent.type)
                 {
                     case SDL.SDL_EventType.SDL_KEYDOWN:
-                        OnKeyboardDown(sdlEvent.key.keysym.sym);
+                        Input.KeyDownInvoke(sdlEvent);
                         break;
                     case SDL.SDL_EventType.SDL_KEYUP:
-                        OnKeyboardUp(sdlEvent.key.keysym.sym);
+                        Input.KeyUpInvoke(sdlEvent);
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
                         Input.MouseDownInvoke(sdlEvent);
@@ -269,7 +269,8 @@ namespace OpenGL.Platform
                         break;
                 }
             }
-            Input.Update();
+            Input.MouseRepeatInvoke();
+            Input.KeyRepeatInvoke();
         }
         #endregion
 
@@ -306,20 +307,6 @@ namespace OpenGL.Platform
         #endregion
 
         #region Mouse Callbacks
-        private static int prevx, prevy, downx, downy;
-
-        public delegate bool OnMouseCallback(int button, int state, int x, int y);
-        public delegate bool OnMouseMoveCallback(int x, int y);
-        public delegate bool OnMouseMotionCallback(int dx, int dy);
-
-        public static List<OnMouseCallback> OnMouseCallbacks = new List<OnMouseCallback>();
-        public static List<OnMouseMoveCallback> OnMouseMoveCallbacks = new List<OnMouseMoveCallback>();
-        public static List<OnMouseMotionCallback> OnMouseMotionCallbacks = new List<OnMouseMotionCallback>();
-
-        public static bool LockLMouse { get; set; }
-
-        public static bool LockRMouse { get; set; }
-
         public static void ShowCursor(bool cursor)
         {
             SDL.SDL_ShowCursor(cursor ? 1 : 0);
@@ -330,45 +317,6 @@ namespace OpenGL.Platform
             NativeMethods.CGSetLocalEventsDelegateOSIndependent(0.0);
             SDL.SDL_WarpMouseInWindow(window, x, y);
             NativeMethods.CGSetLocalEventsDelegateOSIndependent(0.25);
-        }
-        #endregion
-
-        #region Keyboard Callbacks
-        private static bool lshift, lctrl, lalt;
-        private static bool rshift, rctrl, ralt;
-
-        private static void OnKeyboardDown(SDL.SDL_Keycode sym)
-        {
-            // send all keyboard events to the Input static class
-            if (sym == SDL.SDL_Keycode.SDLK_LSHIFT) lshift = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_RSHIFT) rshift = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_LCTRL) lctrl = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_RCTRL) rctrl = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_LALT) lalt = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_RALT) ralt = true;
-            else if (sym == SDL.SDL_Keycode.SDLK_LEFT) Input.AddKey((char)0, lshift || rshift, lctrl || rctrl, lalt || ralt);
-            else if (sym == SDL.SDL_Keycode.SDLK_RIGHT) Input.AddKey((char)1, lshift || rshift, lctrl || rctrl, lalt || ralt);
-            else if (sym == SDL.SDL_Keycode.SDLK_UP) Input.AddKey((char)2, lshift || rshift, lctrl || rctrl, lalt || ralt);
-            else if (sym == SDL.SDL_Keycode.SDLK_DOWN) Input.AddKey((char)3, lshift || rshift, lctrl || rctrl, lalt || ralt);
-            else Input.AddKey((char)sym, lshift || rshift, lctrl || rctrl, lalt || ralt);
-            Input.AddKeyRaw(sym);
-        }
-
-        private static void OnKeyboardUp(SDL.SDL_Keycode sym)
-        {
-            // send all keyboard events to the Input static class
-            if (sym == SDL.SDL_Keycode.SDLK_LSHIFT) lshift = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_RSHIFT) rshift = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_LCTRL) lctrl = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_RCTRL) rctrl = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_LALT) lalt = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_RALT) ralt = false;
-            else if (sym == SDL.SDL_Keycode.SDLK_LEFT) Input.RemoveKey((char)0);
-            else if (sym == SDL.SDL_Keycode.SDLK_RIGHT) Input.RemoveKey((char)1);
-            else if (sym == SDL.SDL_Keycode.SDLK_UP) Input.RemoveKey((char)2);
-            else if (sym == SDL.SDL_Keycode.SDLK_DOWN) Input.RemoveKey((char)3);
-            else Input.RemoveKey((char)sym);
-            Input.RemoveKeyRaw(sym);
         }
         #endregion
     }

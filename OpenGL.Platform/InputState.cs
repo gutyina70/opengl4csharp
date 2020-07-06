@@ -35,7 +35,7 @@ namespace OpenGL.Platform
         public static int MouseY { get; internal set; }
         public static int MouseWheel { get; internal set; }
         public static StateDictionary<MouseButton> MouseButtons { get; }
-        public static StateDictionary<SDL.SDL_Keycode> Keys { get; }
+        public static StateDictionary<SDL.SDL_Scancode> Keys { get; }
 
         static InputState()
         {
@@ -43,7 +43,7 @@ namespace OpenGL.Platform
             MouseY = 0;
             MouseWheel = 0;
             MouseButtons = new StateDictionary<MouseButton>();
-            Keys = new StateDictionary<SDL.SDL_Keycode>();
+            Keys = new StateDictionary<SDL.SDL_Scancode>();
         }
     }
 }
