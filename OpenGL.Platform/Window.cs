@@ -231,27 +231,23 @@ namespace OpenGL.Platform
                         OnKeyboardUp(sdlEvent.key.keysym.sym);
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
+                        Input.MouseDownInvoke(sdlEvent);
+                        break;
                     case SDL.SDL_EventType.SDL_MOUSEBUTTONUP:
-                        // keep track of mouse state internally due to a bug in SDL
-                        // https://bugzilla.libsdl.org/show_bug.cgi?id=2195
-                        if (mouseState[sdlEvent.button.button] == sdlEvent.button.state) break;
-                        mouseState[sdlEvent.button.button] = sdlEvent.button.state;
-                        if (sdlEvent.button.y == 0 || sdlEvent.button.x == 0) mouseState[sdlEvent.button.button] = 0;
-
-                        OnMouse(sdlEvent.button.button, sdlEvent.button.state, sdlEvent.button.x, sdlEvent.button.y);
+                        Input.MouseUpInvoke(sdlEvent);
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEMOTION:
                         if(relativeMouseMode)
                         {
-                            OnMotionPassive(sdlEvent.motion.xrel, sdlEvent.motion.yrel);
+                            Input.MouseMotionInvoke(sdlEvent);
                         }
                         else
                         {
-                            OnMovePassive(sdlEvent.motion.x, sdlEvent.motion.y);
+                            Input.MouseMoveInvoke(sdlEvent);
                         }
                         break;
                     case SDL.SDL_EventType.SDL_MOUSEWHEEL:
-                        OnMouseWheel?.Invoke(sdlEvent.wheel.which, sdlEvent.wheel.y, 0, 0);
+                        Input.MouseWheelInvoke(sdlEvent);
                         break;
                     case SDL.SDL_EventType.SDL_WINDOWEVENT:
                         switch (sdlEvent.window.windowEvent)
@@ -273,6 +269,7 @@ namespace OpenGL.Platform
                         break;
                 }
             }
+            Input.Update();
         }
         #endregion
 
@@ -328,116 +325,11 @@ namespace OpenGL.Platform
             SDL.SDL_ShowCursor(cursor ? 1 : 0);
         }
 
-        public static void LockMouse(Click Mouse)
-        {
-            if (Mouse.State == MouseState.Up) WarpPointer(downx, downy);
-
-            SDL.SDL_ShowCursor((Mouse.State == MouseState.Down) ? 0 : 1);
-
-            downx = prevx = Mouse.X;
-            downy = prevy = Mouse.Y;
-
-            if (Mouse.State == MouseState.Down) Input.MouseMove = new Event(MouseMove);
-            else Input.MouseMove = new Event(MouseMovePassive);
-        }
-
-        public static void MouseRightClick(Click Mouse)
-        {
-            if (LockRMouse) LockMouse(Mouse);
-
-            Input.RightMouse = (Mouse.State == MouseState.Down);
-        }
-
-        public static void MouseLeftClick(Click Mouse)
-        {
-            if (Input.RightMouse) return;
-
-            if (Input.LeftMouse && Mouse.State == MouseState.Up)
-            {
-                if (LockLMouse) LockMouse(Mouse);
-                Input.LeftMouse = false;
-            }
-            else if (Mouse.State == MouseState.Down)
-            {
-                if (LockLMouse) LockMouse(Mouse);
-                Input.LeftMouse = true;
-            }
-        }
-
         public static void WarpPointer(int x, int y)
         {
             NativeMethods.CGSetLocalEventsDelegateOSIndependent(0.0);
             SDL.SDL_WarpMouseInWindow(window, x, y);
             NativeMethods.CGSetLocalEventsDelegateOSIndependent(0.25);
-        }
-
-        public static void MouseMove(int lx, int ly, int x, int y)
-        {
-            if (prevx != x || prevy != y) WarpPointer(prevx, prevy);
-        }
-
-        public static void MouseMovePassive(int lx, int ly, int x, int y)
-        {
-            prevx = x;
-            prevy = y;
-        }
-
-        private static void OnMouse(int button, int state, int x, int y)
-        {
-            downx = x; downy = y;
-
-            // everything below should eventually move into Input.cs
-            bool handled = false;
-
-            for (int i = 0; i < OnMouseCallbacks.Count && !handled; i++)
-                handled = OnMouseCallbacks[i](button, state, x, y);
-
-            if (!handled)
-            {
-                Click mouse = new Click(x, y, (MouseButton)button, (MouseState)state); 
-
-                switch ((MouseButton)button)
-                {
-                    case MouseButton.Left: if (Input.MouseLeftClick != null && Input.MouseLeftClick.Click != null) Input.MouseLeftClick.Click(mouse);
-                        break;
-                    case MouseButton.Middle: if (Input.MouseMiddleClick != null && Input.MouseMiddleClick.Click != null) Input.MouseMiddleClick.Click(mouse);
-                        break;
-                    case MouseButton.Right: if (Input.MouseRightClick != null && Input.MouseRightClick.Click != null) Input.MouseRightClick.Click(mouse);
-                        break;
-                }
-            }
-        }
-
-        private static void OnMovePassive(int x, int y)
-        {
-            // everything below should eventually move into Input.cs
-            bool handled = false;
-
-            for (int i = 0; i < OnMouseMoveCallbacks.Count && !handled; i++)
-                handled = OnMouseMoveCallbacks[i](x, y);
-
-            if (!handled)
-            {
-                if (Input.MouseMove != null && Input.MouseMove.Move != null)
-                    Input.MouseMove.Move(Input.MousePosition.X, Input.MousePosition.Y, x, y);
-
-                Input.MousePosition = new Click(x, y, Input.MousePosition.Button, Input.MousePosition.State);
-            }
-        }
-
-        private static void OnMotionPassive(int dx, int dy)
-        {
-            // everything below should eventually move into Input.cs
-            bool handled = false;
-
-            for(int i = 0; i < OnMouseMotionCallbacks.Count && !handled; i++)
-                handled = OnMouseMotionCallbacks[i](dx, dy);
-
-            if(!handled)
-            {
-                if(Input.MouseMotion != null && Input.MouseMotion.Motion != null)
-                    Input.MouseMotion.Motion(dx, dy);
-            }
         }
         #endregion
 

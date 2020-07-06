@@ -38,6 +38,7 @@
     <Compile Include="Compatibility.cs" />
     <Compile Include="Input.cs" />
     <Compile Include="MouseEventArgs.cs" />
+    <Compile Include="MouseState.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="SDL2-CS\LPUtf8StrMarshaler.cs" />
     <Compile Include="SDL2-CS\SDL2.cs" />

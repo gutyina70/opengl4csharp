@@ -15,40 +15,12 @@ namespace OpenGL.Platform
         /// <summary>The keyboard event delegate.</summary>
         public delegate void KeyEvent(char c, bool state);
 
-        /// <summary>A simple keyboard event delegate that only receives a state.</summary>
-        public delegate void StateKeyEvent(bool state);
-
         /// <summary>The keyboard event delegate.</summary>
         /// <param name="Time">Seconds since the last frame.</param>
         public delegate void RepeatEvent(float Time);
 
-        /// <summary>The mouse event delegate.</summary>
-        /// <param name="Mouse">The mouse position and button pressed.</param>
-        public delegate void MouseEvent(Click Mouse);
-
-        /// <summary>The mouse move event delegate.</summary>
-        /// <param name="lx">Previous x position.</param>
-        /// <param name="ly">Previous y position.</param>
-        /// <param name="x">New x position.</param>
-        /// <param name="y">New y position.</param>
-        public delegate void MoveEvent(int lx, int ly, int x, int y);
-
-        /// <summary>The mouse motion event delegate.</summary>
-        /// <param name="x">Delta x position.</param>
-        /// <param name="y">Delta y position.</param>
-        public delegate void MotionEvent(int dx, int dy);
-
         /// <summary>A keyEvent delegate which can be called by a keyDown or keyUp event.</summary>
         public KeyEvent Call { get; private set; }
-
-        /// <summary>A mouseEvent delegate which can be called by a mouseDown event.</summary>
-        public MouseEvent Click { get; private set; }
-
-        /// <summary>A moveEvent delegate which can be called by a mouseMove event.</summary>
-        public MoveEvent Move { get; private set; }
-
-        /// <summary>A motionEvent delegate which can be called by a mouseMove event when relative mouse mode is on.</summary>
-        public MotionEvent Motion { get; private set; }
 
         /// <summary>A repeatEvent delegate which can be called by UpdateKeys(float Time).</summary>
         public RepeatEvent Repeat { get; private set; }
@@ -65,39 +37,11 @@ namespace OpenGL.Platform
             };
         }
 
-        /// <summary>Create a KeyEvent delegate from a StateKeyEvent delegate.</summary>
-        /// <param name="Event">The Event to call on a key down event.</param>
-        public Event(StateKeyEvent Event)
-        {
-            this.Call = (key, state) => Event(state);
-        }
-
         /// <summary>Standard constructor for a keyboard event.</summary>
         /// <param name="Event">The Event to call on a keyDown event.</param>
         public Event(KeyEvent Event)
         {
             this.Call = Event;
-        }
-
-        /// <summary>Standard constructor for a mouse event.</summary>
-        /// <param name="Event">The Event to call on a mouseClick event.</param>
-        public Event(MouseEvent Event)
-        {
-            this.Click = Event;
-        }
-
-        /// <summary>Standard constructor for a mouse mouse event.</summary>
-        /// <param name="Event">The Event to call on a mouse move event.</param>
-        public Event(MoveEvent Event)
-        {
-            this.Move = Event;
-        }
-
-        /// <summary>Standard constructor for a mouse motion event.</summary>
-        /// <param name="Event">The Event to call on a mouse motion event.</param>
-        public Event(MotionEvent Event)
-        {
-            this.Motion = Event;
         }
 
         /// <summary>Standard constructor for a mouse mouse event.</summary>
@@ -140,13 +84,65 @@ namespace OpenGL.Platform
         public static List<char> keysRaw;                              // a list of raw keys that are down
         private static Stack<Event[]> subqueue;                        // a stack of events, the topmost being the current key bindings
         private static Stack<Event[]> subqueueRaw;                     // a stack of events, the topmost being the current raw key bindings
-        private static Click mousePosition, prevMousePosition;         // the current and previous mouse position and button
-        private static Event mouseLeft, mouseRight, mouseMiddle;       // the events to be called on a mouse click
-        private static Event mouseMove, mouseMotion;                   // the event to call on a mouse move event
         public static Dictionary<SDL.SDL_Keycode, char> sdlKeyMap;     // SDL Keyscodes mapped to a char
+        #endregion
 
-        public static bool RightMouse { get; set; }
-        public static bool LeftMouse { get; set; }
+        #region Events
+        public static event Action<MouseButton, int, int> MouseDown;
+        public static event Action<MouseButton, int, int> MouseUp;
+        public static event Action<int, int> MouseMove;
+        public static event Action<int, int> MouseMotion;
+        public static event Action<int> MouseWheel;
+        public static event Action<Dictionary<MouseButton, bool>, int, int> MouseRepeat;
+
+        internal static void MouseDownInvoke(SDL.SDL_Event e)
+        {
+            MouseButton button = (MouseButton)e.button.button;
+            MouseState.Buttons[button] = true;
+            MouseDown?.Invoke(button, e.button.x, e.button.y);
+        }
+
+        internal static void MouseUpInvoke(SDL.SDL_Event e)
+        {
+            MouseButton button = (MouseButton)e.button.button;
+            MouseState.Buttons[button] = false;
+            MouseUp?.Invoke(button, e.button.x, e.button.y);
+        }
+
+        internal static void MouseMoveInvoke(SDL.SDL_Event e)
+        {
+            int x = e.motion.x;
+            int y = e.motion.y;
+            MouseState.X = x;
+            MouseState.Y = y;
+            MouseMove?.Invoke(x, y);
+        }
+
+        internal static void MouseMotionInvoke(SDL.SDL_Event e)
+        {
+            int x = e.motion.xrel;
+            int y = e.motion.yrel;
+            MouseState.X += x;
+            MouseState.Y += y;
+            MouseMotion?.Invoke(x, y);
+        }
+
+        internal static void MouseWheelInvoke(SDL.SDL_Event e)
+        {
+            int wheel = e.wheel.y;
+            MouseState.Wheel += wheel;
+            MouseWheel?.Invoke(wheel);
+        }
+
+        internal static void MouseRepeatInvoke()
+        {
+            MouseRepeat?.Invoke(MouseState.Buttons, MouseState.X, MouseState.Y);
+        }
+
+        //internal static void MouseRepeatInvoke(SDL.SDL_Event e)
+        //{
+        //    MouseMotion?.Invoke(new MouseEventArgs(e.motion.x, e.motion.y, (MouseButton)e.button.button, Convert.ToBoolean(e.button.state)));
+        //}
         #endregion
 
         #region Properties
@@ -164,69 +160,6 @@ namespace OpenGL.Platform
         public static Event[] KeyBindingsRaw
         {
             get { lock(subqueueRaw) return subqueueRaw.Peek(); }
-        }
-
-        /// <summary>
-        /// The current mouse state (position and button press).
-        /// </summary>
-        public static Click MousePosition
-        {
-            get { return mousePosition; }
-            set { prevMousePosition = mousePosition; mousePosition = value; }
-        }
-
-        /// <summary>
-        /// The previous state of the mouse (position and button press).
-        /// </summary>
-        public static Click PreviousMousePosition
-        {
-            get { return prevMousePosition; }
-            set { prevMousePosition = value; }
-        }
-
-        /// <summary>
-        /// An event that will be called on a mouse left click.
-        /// </summary>
-        public static Event MouseLeftClick
-        {
-            get { return mouseLeft; }
-            set { mouseLeft = value; }
-        }
-
-        /// <summary>
-        /// An event that will be called on a mouse middle click.
-        /// </summary>
-        public static Event MouseMiddleClick
-        {
-            get { return mouseMiddle; }
-            set { mouseMiddle = value; }
-        }
-
-        /// <summary>
-        /// An event that will be called on a mouse right click.
-        /// </summary>
-        public static Event MouseRightClick
-        {
-            get { return mouseRight; }
-            set { mouseRight = value; }
-        }
-
-        /// <summary>
-        /// An event that will be called on a mouse move.
-        /// </summary>
-        public static Event MouseMove
-        {
-            get { return mouseMove; }
-            set { mouseMove = value; }
-        }
-
-        /// <summary>
-        /// An event that will be called on a mouse motion.
-        /// </summary>
-        public static Event MouseMotion
-        {
-            get { return mouseMotion; }
-            set { mouseMotion = value; }
         }
         #endregion
 
@@ -505,6 +438,8 @@ namespace OpenGL.Platform
                     if(KeyBindingsRaw[keysRaw[i]] != null && KeyBindingsRaw[keysRaw[i]].Repeat != null)
                         KeyBindingsRaw[keysRaw[i]].Repeat(Time.DeltaTime);
             }
+
+            MouseRepeatInvoke();
         }
         #endregion
     }
