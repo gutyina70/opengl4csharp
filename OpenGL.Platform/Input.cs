@@ -10,11 +10,11 @@ namespace OpenGL.Platform
         public delegate void MouseMoveEventHandler(int x, int y);
         public delegate void MouseMotionEventHandler(int dx, int dy);
         public delegate void MouseWheelEventHandler(int scroll);
-        public delegate void MouseRepeatEventHandler(StateDictionary<MouseButton> buttons, int x, int y);
+        public delegate void MouseRepeatEventHandler(float time, StateDictionary<MouseButton> buttons, int x, int y);
 
         public delegate void KeyDownEventHandler(SDL.SDL_Scancode key);
         public delegate void KeyUpEventHandler(SDL.SDL_Scancode key);
-        public delegate void KeyRepeatEventHandler(StateDictionary<SDL.SDL_Scancode> keys);
+        public delegate void KeyRepeatEventHandler(float time, StateDictionary<SDL.SDL_Scancode> keys);
 
         #region Events
         public static event MouseDownEventHandler MouseDown;
@@ -71,7 +71,7 @@ namespace OpenGL.Platform
 
         internal static void MouseRepeatInvoke()
         {
-            MouseRepeat?.Invoke(InputState.MouseButtons, InputState.MouseX, InputState.MouseY);
+            MouseRepeat?.Invoke(Time.DeltaTime, InputState.MouseButtons, InputState.MouseX, InputState.MouseY);
         }
 
 
@@ -91,7 +91,7 @@ namespace OpenGL.Platform
 
         internal static void KeyRepeatInvoke()
         {
-            KeyRepeat?.Invoke(InputState.Keys);
+            KeyRepeat?.Invoke(Time.DeltaTime, InputState.Keys);
         }
         #endregion
     }

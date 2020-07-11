@@ -269,6 +269,7 @@ namespace OpenGL.Platform
                         break;
                 }
             }
+            Time.Update();
             Input.MouseRepeatInvoke();
             Input.KeyRepeatInvoke();
         }
